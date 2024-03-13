@@ -52,6 +52,8 @@ app.get('/', async (req, res) => {
    
     let promptText;
     promptText = `Escribe una introuccion de una pagina`;
+
+    console.log(config.apiKey);
     const prompt = ChatPromptTemplate.fromMessages([
       ["human", promptText],
     ]);
