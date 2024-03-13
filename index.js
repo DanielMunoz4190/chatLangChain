@@ -48,9 +48,30 @@ app.post('/generate', async (req, res) => {
   }
 });
 
-app.get('/', (req, res) => {
-    res.send('¡Hola, mundo!');
+app.get('/', async (req, res) => {
+   
+    let promptText;
+    promptText = `Escribe una introuccion de una pagina`;
+    const prompt = ChatPromptTemplate.fromMessages([
+      ["human", promptText],
+    ]);
+
+    const model = new ChatOpenAI({
+        apiKey: config.apiKey,
+        });
+    const outputParser = new StringOutputParser();
+
+    const chain = prompt.pipe(model).pipe(outputParser);
+
+    try {
+        const response = await chain.invoke({});
+        res.json({ response });
     }
+    catch (error) {
+        console.error(error);
+        res.status(500).send('Error al generar la respuesta.');
+    }
+}
 );
 
 app.listen(port, () => {
