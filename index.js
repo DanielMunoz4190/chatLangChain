@@ -1,10 +1,10 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import config from "./config.js";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 
+const OPENAI_API_KEY = "es un secreto, jiji";
 const app = express();
 const port = 3000;
 
@@ -33,7 +33,7 @@ app.post('/generate', async (req, res) => {
   ]);
 
   const model = new ChatOpenAI({
-    apiKey: config.apiKey,
+    apiKey: OPENAI_API_KEY,
   });
   const outputParser = new StringOutputParser();
   
@@ -49,30 +49,7 @@ app.post('/generate', async (req, res) => {
 });
 
 app.get('/', async (req, res) => {
-   
-    let promptText;
-    promptText = `Escribe una introuccion de una pagina`;
-
-    console.log(config.apiKey);
-    const prompt = ChatPromptTemplate.fromMessages([
-      ["human", promptText],
-    ]);
-
-    const model = new ChatOpenAI({
-        apiKey: config.apiKey,
-        });
-    const outputParser = new StringOutputParser();
-
-    const chain = prompt.pipe(model).pipe(outputParser);
-
-    try {
-        const response = await chain.invoke({});
-        res.json({ response });
-    }
-    catch (error) {
-        console.error(error);
-        res.status(500).send('Error al generar la respuesta.');
-    }
+    res.send('¡Hola, mundo!');
 }
 );
 
