@@ -3,8 +3,7 @@ import bodyParser from 'body-parser';
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
-
-const OPENAI_API_KEY = "es un secreto, jiji";
+import config from './config.js';
 const app = express();
 const port = 3000;
 
@@ -33,7 +32,7 @@ app.post('/generate', async (req, res) => {
   ]);
 
   const model = new ChatOpenAI({
-    apiKey: OPENAI_API_KEY,
+    apiKey: "a",
   });
   const outputParser = new StringOutputParser();
   
