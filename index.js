@@ -14,6 +14,10 @@ app.use(express.urlencoded({ extended: true }));
 
 app.post('/generate', async (req, res) => {
   const { tipo, descripcion } = req.body;
+
+  if (!descripcion.trim()) {
+    return res.redirect('/?error=Hey, no trates de romper esta humilde página.');
+  }
   
   let promptText;
   switch (tipo) {
@@ -177,10 +181,64 @@ app.get('/', async (req, res) => {
         </div>
     </form>
   </div>
+  <script>
+  document.getElementById('content').querySelector('form').onsubmit = function(e) {
+    const descripcion = document.getElementById('descripcion').value.trim();
+    if (!descripcion) {
+      e.preventDefault(); // Evita el envío del formulario
+      alert('Hey, no trates de romper esta humilde página.');
+    }
+  };
+</script>
 </body>
+
 </html>
   `;
   res.send(htmlContent);
+});
+
+app.use((req, res, next) => {
+  res.status(404).send(`
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Página no encontrada</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 100vh;
+    }
+    h1 {
+      color: #d9534f;
+    }
+    a {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+    a:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>404 - Página no encontrada</h1>
+  <p>Lo sentimos, la página que estás buscando no existe.</p>
+  <a href="/">Volver al inicio</a>
+</body>
+</html>
+  `);
 });
 
 
