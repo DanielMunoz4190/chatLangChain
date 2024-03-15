@@ -27,15 +27,15 @@ app.post('/generate', async (req, res) => {
       promptText = `Genera la descripción de un producto sobre ${descripcion}`;
       break;
     default:
-      return res.status(400).json({ error: 'No trates de romper esto y selecciona una opcion válida.'});
+      // Redirige de nuevo al formulario con un mensaje de error si el tipo no es válido
+      res.redirect(`/?error=Tipo no válido. Por favor, selecciona una opción correcta.`);
+      return;
   }
 
-  const prompt = ChatPromptTemplate.fromMessages([
-    ["human", promptText],
-  ]);
+  const prompt = ChatPromptTemplate.fromMessages([["human", promptText]]);
 
   const model = new ChatOpenAI({
-    apiKey: config.apiKey, // Asegúrate de que tu archivo config.js exporta una propiedad apiKey
+    apiKey: config.apiKey,
   });
   const outputParser = new StringOutputParser();
   
@@ -43,63 +43,146 @@ app.post('/generate', async (req, res) => {
   
   try {
     const response = await chain.invoke({});
-    res.json({ formattedResponse: `<p>${response.replace(/\n/g, '<br>')}</p>` });
+    const formattedResponse = `<p>${response.replace(/\n/g, '<br>')}</p>`;
+    // Envía de vuelta una página HTML con el contenido generado y mejorada estéticamente
+    res.send(`
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Respuesta Generada</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 100vh;
+    }
+    #content {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      width: 100%;
+    }
+    a {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+    a:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div id="content">
+    <h2>Resultado:</h2>
+    ${formattedResponse}
+    <a href="/">Volver</a>
+  </div>
+</body>
+</html>
+    `);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: '¡Ups! Parece que nuestro generador de contenidos tuvo un pequeño tropiezo. ¿Podrías intentarlo de nuevo?' });
+    // Redirige de nuevo al formulario con un mensaje de error si ocurre un error al generar la respuesta
+    res.redirect(`/?error=Error al generar el contenido. Por favor, intenta de nuevo.`);
   }
 });
 
+
 app.get('/', async (req, res) => {
+  const errorMessage = req.query.error ? `<p style="color: red; font-weight: bold;">${req.query.error}</p>` : '';
   const htmlContent = `
 <!DOCTYPE html>
 <html>
 <head>
   <title>Generador de Contenido</title>
   <style>
-    body { display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; }
-    #responseContainer { margin-top: 20px; }
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    form {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    input[type="text"], input[type="submit"] {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+      width: calc(100% - 22px);
+    }
+    input[type="submit"] {
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    input[type="submit"]:hover {
+      background-color: #0056b3;
+    }
+    label {
+      margin-right: 10px;
+    }
+    #errorMessage {
+      color: red;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
-  <form id="generateForm">
-      <input type="radio" id="cuento" name="tipo" value="cuento" checked>
-      <label for="cuento">Cuento</label><br>
-      <input type="radio" id="poema" name="tipo" value="poema">
-      <label for="poema">Poema</label><br>
-      <input type="radio" id="producto" name="tipo" value="producto">
-      <label for="producto">Producto</label><br>
-      <label for="descripcion">Descripción:</label><br>
-      <input type="text" id="descripcion" name="descripcion"><br><br>
-      <input type="submit" value="Enviar">
-  </form>
-  <div id="responseContainer"></div>
-  <script>
-    document.getElementById('generateForm').onsubmit = async function(e) {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      const descripcion = formData.get('descripcion');
-      if (!descripcion) {
-        document.getElementById('responseContainer').innerHTML = '<p style="color: red;">¿Intentas enviar un mensaje al vacío? Escribe algo interesante primero. 😉</p>';
-        return;
-      }
-      const response = await fetch('/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(Object.fromEntries(formData))
-      });
-      const data = await response.json();
-      if (data.error) {
-        document.getElementById('responseContainer').innerHTML = '<p style="color: red;">' + data.error + '</p>';
-        document.getElementById('responseContainer').innerHTML = data.formattedResponse;
-      }
-    };
-  </script>
+  <div id="content">
+    ${errorMessage}
+    <form action="/generate" method="post">
+        <div>
+          <input type="radio" id="cuento" name="tipo" value="cuento" checked>
+          <label for="cuento">Cuento</label>
+        </div>
+        <div>
+          <input type="radio" id="poema" name="tipo" value="poema">
+          <label for="poema">Poema</label>
+        </div>
+        <div>
+          <input type="radio" id="producto" name="tipo" value="producto">
+          <label for="producto">Producto</label>
+        </div>
+        <div>
+          <label for="descripcion">Descripción:</label><br>
+          <input type="text" id="descripcion" name="descripcion">
+        </div>
+        <div>
+          <input type="submit" value="Enviar">
+        </div>
+    </form>
+  </div>
 </body>
 </html>
   `;
   res.send(htmlContent);
 });
+
 
 app.listen(port, () => {
   console.log(`Servidor corriendo en http://localhost:${port}`);
